@@ -23,28 +23,13 @@ object Crawler extends App{
     for (entry <- entries) {
         println("Title: " + entry.getTitle)
         println("URI:   " + entry.getUri)
-        println("Date:  " + entry.getDate)
-
-        // java.util.List[SyndLink]
-        val links = asScalaBuffer(entry.getLinks).toVector
-        for (link <- links) {
-            println("Link: " + link.getHref)
-        }
-
-        val contents = asScalaBuffer(entry.getContents).toVector
-        for (content <- contents) {
-            println("Content: " + content.getValue)
-        }
-
-        val categories = asScalaBuffer(entry.getCategories).toVector
-        for (category <- categories) {
-            println("Category: " + category.getName)
-        }
+        println("Date:  " + entry.getPublishedDate)
+        println("Author:  " + entry.getAuthor)
+        println("Summary:  " + entry.getDescription.getValue)
 
         println("")
-
     }
 }
 
 
-//case class Article(title: String, url: String, )
+case class Article(title: String, url: String, date: )
