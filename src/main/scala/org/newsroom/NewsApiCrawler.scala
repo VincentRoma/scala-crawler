@@ -2,6 +2,8 @@ package org.newsroom
 
 import java.nio.charset.StandardCharsets
 
+import java.nio.charset.StandardCharsets
+
 import ujson.Value.Value
 import scalaj.http.{Http, HttpConstants, HttpResponse, Token}
 
@@ -26,6 +28,7 @@ object NewsApiCrawler extends App {
         )
       }).map(value => println(value.source))
   }
+
 
   /**
    *
@@ -58,6 +61,7 @@ object NewsApiCrawler extends App {
    */
   def parse(json: String): Value = ujson.read(json)
 
+
   /**
    *
    * @param title
@@ -89,8 +93,9 @@ object NewsApiCrawler extends App {
    */
   def httpCall(url: String): String = Http(url)
     .charset(HttpConstants.utf8)
-    .param("apiKey", "")
+    .param("apiKey", "fc97a9aded994810a43cac97199c896c")
     .param("q", "")
+    .param("pageSize","100")
     .param("country", "fr")
     .charset(HttpConstants.utf8)
     .asString
