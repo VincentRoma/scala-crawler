@@ -1,25 +1,27 @@
-package org.newsroom
+package org.newsroom.eslastic
 
-import com.sun.net.httpserver.Authenticator.Success
-import org.newsroom.RSSScrapper.ArticleMetaData
-import scalaj.http.{Http, HttpConstants}
-import requests._
+import org.newsroom.logger.LogsHelper
+import org.newsroom.rss.RSSScrapper.ArticleMetaData
+import org.newsroom.utils.FileUtils.logger
 
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
-
-class ESIndexer(articleMetaDataSeq: Seq[ArticleMetaData]) {
+class ESIndexer(articleMetaDataSeq: Seq[ArticleMetaData]) extends LogsHelper {
 
   import ESIndexer._
-
 
   /**
    *
    * @return
    */
   def run = {
-    println(s"Indexing ${articleMetaDataSeq.size}")
-    articleMetaDataSeq.map(httpPut("lemonde", _))
+    logger.info(s"[RSS] - Indexing ${articleMetaDataSeq.size} articles")
+    articleMetaDataSeq
+      .foreach(httpPut("lemonde", _)
+      match {
+        case Success(_) => logger.info("[Success]")
+        case Failure(ex) => logger.info(s"[Error] : ${ex} ")
+      })
   }
 
 
@@ -46,8 +48,10 @@ class ESIndexer(articleMetaDataSeq: Seq[ArticleMetaData]) {
    * @return
    */
   def httpPut(indexName: String, data: ArticleMetaData) = {
-    println(s"index ${data.title}")
-    requests.post(ES_URL + indexName + "/_doc", headers = Map("content-type" -> "application/json"), data = generateJson(data))
+    logger.info(s"[RSS] - Indexing ${data.title} ")
+    Try {
+      requests.post(ES_URL + indexName + "/_doc", headers = Map("content-type" -> "application/json"), data = generateJson(data))
+    }
   }
 }
 
