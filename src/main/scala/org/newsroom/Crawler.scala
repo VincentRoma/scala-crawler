@@ -6,10 +6,12 @@ import java.util.Date
 import com.rometools.rome.feed.synd.SyndFeed
 import com.rometools.rome.io.SyndFeedInput
 import com.rometools.rome.io.XmlReader
+import com.rometools.rome.feed.synd.SyndFeed
+import com.rometools.rome.io.{SyndFeedInput, XmlReader}
 
+import scala.collection.JavaConversions._
 
 object Crawler extends App{
-
     val feedUrl = new URL("https://www.lemonde.fr/politique/rss_full.xml")
     val input = new SyndFeedInput
     val feed: SyndFeed = input.build(new XmlReader(feedUrl))
