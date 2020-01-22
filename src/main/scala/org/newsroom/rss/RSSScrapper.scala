@@ -26,6 +26,7 @@ object RSSScrapper extends App with LogsHelper {
         logger.info("[RSS] - Start Scrapping RSS flux")
         val metaArticlesSeqFilter: Seq[Seq[ArticleMetaData]] = filterIdReader match {
           case Success(value) =>
+            val a = scrap(ressUrlsList)
             logger.info("[RSS] - Start Scrapping RSS flux without old urls")
             scrap(ressUrlsList)
               .map(seqSource => seqSource
@@ -36,7 +37,7 @@ object RSSScrapper extends App with LogsHelper {
             scrap(ressUrlsList)
         }
         logger.info("[RSS] - ES Indexing start")
-        ESIndexer(metaArticlesSeqFilter.flatten).run
+//        ESIndexer(metaArticlesSeqFilter.flatten).run
         logger.info("[RSS] - ES Indexing end")
 
 
@@ -77,7 +78,7 @@ object RSSScrapper extends App with LogsHelper {
       Try {
         val (name, flux) = parseRssRow(rss)
         logger.info(s"[RSS] - Start collect ${name}")
-        initRssSync(flux).map(entry => {
+        val rssArticles: Seq[ArticleMetaData] = initRssSync(flux).map(entry => {
           ArticleMetaData(
             entry.getTitle,
             entry.getUri,
@@ -86,11 +87,20 @@ object RSSScrapper extends App with LogsHelper {
             entry.getDescription.getValue
           )
         })
+
+
+
+        /* Run Indexer */
+        ESIndexer(rssArticles).run
+
+
+        /* Return file_id to filter */
+        rssArticles
       } match {
         case Success(value) => value
         case Failure(ex) =>
           logger.error(s"[RSS] - Error collect for one RSS")
-          Seq(ArticleMetaData("fail", "", DateUtils.convertStringToDate("20190101"), "", ""))
+          Seq(ArticleMetaData("fail", "", DateUtils.convertStringToDate("20190101",Some("yyyyMMdd")), "", ""))
       }
     })
   }

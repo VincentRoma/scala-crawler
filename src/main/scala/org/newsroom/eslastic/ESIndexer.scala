@@ -1,7 +1,10 @@
 package org.newsroom.eslastic
 
+import java.nio.charset.StandardCharsets
+
 import org.newsroom.logger.LogsHelper
 import org.newsroom.rss.RSSScrapper.ArticleMetaData
+import org.newsroom.utils.DateUtils
 
 import scala.util.{Failure, Success, Try}
 
@@ -16,7 +19,7 @@ class ESIndexer(articleMetaDataSeq: Seq[ArticleMetaData]) extends LogsHelper {
   def run = {
     logger.info(s"[RSS] - Indexing ${articleMetaDataSeq.size} articles")
     articleMetaDataSeq
-      .foreach(updateDocument("articles", _)
+      .foreach(postDocument("articles", _)
       match {
         case Success(_) => logger.info("[Success]")
         case Failure(ex) => logger.info(s"[Error] : ${ex} ")
@@ -30,15 +33,26 @@ class ESIndexer(articleMetaDataSeq: Seq[ArticleMetaData]) extends LogsHelper {
    * @return
    */
   def generateJson(article: ArticleMetaData) = {
-    s"""{
-       |  "title": "${article.title}",
-       |  "url": "${article.url}",
-       |  "publishedDate": "${article.publishedDate}",
-       |  "author" : "${article.author}",
-       |  "description": "${article.description}"
-       |  }
-       |""".stripMargin
+    val json =
+      s"""{
+         |  "title": "${article.title}",
+         |  "url": "${article.url}",
+         |  "publishedDate": "${DateUtils.getDateAsString(article.publishedDate, Some("yyyy-MM-dd"))}",
+         |  "author" : "${article.author}",
+         |  "description": "${
+        encodingToUtf8(article.description)
+          .replaceAll("\\n", "")
+          .replaceAll("\"", "")
+          .trim
+      }"
+         |  }
+         |""".stripMargin
+    println(json)
+    json
   }
+
+  def encodingToUtf8(value: String): String = new String(value.getBytes(StandardCharsets.UTF_8))
+
 
   /**
    *
@@ -50,6 +64,13 @@ class ESIndexer(articleMetaDataSeq: Seq[ArticleMetaData]) extends LogsHelper {
     logger.info(s"[RSS] - Indexing ${data.title} ")
     Try {
       requests.post(ES_URL + indexName + "/_update/" + data.url, headers = Map("content-type" -> "application/json"), data = generateJson(data))
+    }
+  }
+
+  def postDocument(indexName: String, data: ArticleMetaData) = {
+    logger.info(s"[RSS] - Indexing ${data.title} ")
+    Try {
+      requests.post(ES_URL + indexName + "/_doc", headers = Map("content-type" -> "application/json"), data = generateJson(data))
     }
   }
 }
