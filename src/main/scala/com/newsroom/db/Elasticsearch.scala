@@ -3,7 +3,7 @@ package com.newsroom.db
 import scalaj.http.{Http, HttpOptions}
 
 
-class Elasticsearch {
+object Elasticsearch {
   val cluster = "http://127.0.0.1:9200/"
   def insertDocument(article: String, index:String): Unit = {
     val result = Http(cluster+index+"/_doc/").postData(article)
