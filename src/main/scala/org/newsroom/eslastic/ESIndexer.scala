@@ -16,7 +16,7 @@ class ESIndexer(articleMetaDataSeq: Seq[ArticleMetaData]) extends LogsHelper {
   def run = {
     logger.info(s"[RSS] - Indexing ${articleMetaDataSeq.size} articles")
     articleMetaDataSeq
-      .foreach(updateDocument("lemonde", _)
+      .foreach(updateDocument("articles", _)
       match {
         case Success(_) => logger.info("[Success]")
         case Failure(ex) => logger.info(s"[Error] : ${ex} ")

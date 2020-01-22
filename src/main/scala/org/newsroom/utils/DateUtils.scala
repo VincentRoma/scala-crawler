@@ -4,7 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 
 object DateUtils {
-  val DATE_FORMAT = "EEE, MMM dd, yyyy h:mm a"
+  val DATE_FORMAT = "yyyyMMdd"
 
   /**
    *
