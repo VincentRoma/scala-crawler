@@ -2,7 +2,6 @@ package org.newsroom.eslastic
 
 import org.newsroom.logger.LogsHelper
 import org.newsroom.rss.RSSScrapper.ArticleMetaData
-import org.newsroom.utils.FileUtils.logger
 
 import scala.util.{Failure, Success, Try}
 
@@ -17,7 +16,7 @@ class ESIndexer(articleMetaDataSeq: Seq[ArticleMetaData]) extends LogsHelper {
   def run = {
     logger.info(s"[RSS] - Indexing ${articleMetaDataSeq.size} articles")
     articleMetaDataSeq
-      .foreach(httpPut("lemonde", _)
+      .foreach(updateDocument("lemonde", _)
       match {
         case Success(_) => logger.info("[Success]")
         case Failure(ex) => logger.info(s"[Error] : ${ex} ")
@@ -47,10 +46,10 @@ class ESIndexer(articleMetaDataSeq: Seq[ArticleMetaData]) extends LogsHelper {
    * @param data
    * @return
    */
-  def httpPut(indexName: String, data: ArticleMetaData) = {
+  def updateDocument(indexName: String, data: ArticleMetaData) = {
     logger.info(s"[RSS] - Indexing ${data.title} ")
     Try {
-      requests.post(ES_URL + indexName + "/_doc", headers = Map("content-type" -> "application/json"), data = generateJson(data))
+      requests.post(ES_URL + indexName + "/_update/" + data.url, headers = Map("content-type" -> "application/json"), data = generateJson(data))
     }
   }
 }
