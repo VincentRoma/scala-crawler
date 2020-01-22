@@ -36,7 +36,7 @@ object RSSScrapper extends App with LogsHelper{
         logger.info("[RSS] - ES Indexing end")
 
 
-        FileUtils.writeFile("/home/greggus/dev/id_file.txt",metaArticlesSeqFilter.flatten.map(_.url))
+        FileUtils.writeFile("/apps/dev/id_file.txt",metaArticlesSeqFilter.flatten.map(_.url))
 
 
         logger.info("[RSS] - RSSScrapper end")

@@ -1,8 +1,6 @@
 package org.newsroom.utils
 
 import java.io.{BufferedWriter, File, FileWriter}
-import java.text.SimpleDateFormat
-import java.util.Date
 
 import org.newsroom.logger.LogsHelper
 
