@@ -36,7 +36,7 @@ object RSSScrapper extends App with LogsHelper{
         logger.info("[RSS] - ES Indexing end")
 
 
-        FileUtils.writeFile("id_file.txt",metaArticlesSeqFilter.flatten.map(_.url))
+        FileUtils.writeFile(currentDirectory+"/id_file.txt",metaArticlesSeqFilter.flatten.map(_.url))
 
 
         logger.info("[RSS] - RSSScrapper end")
@@ -44,8 +44,8 @@ object RSSScrapper extends App with LogsHelper{
         logger.info("                      ")
         logger.info("                      ")
 
-      case Failure(_) =>
-        logger.error("[RSS] - Looking for \"list_flux.txt \" with schema : \"rss_name¤rss_link\"")
+      case Failure(e:Exception) =>
+        logger.error("[RSS] - "+e.getMessage)
         System.exit(0)
     }
   }
@@ -73,9 +73,11 @@ object RSSScrapper extends App with LogsHelper{
     asScalaBuffer(feed.getEntries)
   }
 
-  lazy val rssUrlsReader = FileUtils.readFile("list_flux.txt")
+  val currentDirectory = new java.io.File(".").getCanonicalPath
 
-  lazy val filterIdReader = FileUtils.readFile("id_file.txt")
+  lazy val rssUrlsReader = FileUtils.readFile(currentDirectory+"/list_flux.txt")
+
+  lazy val filterIdReader = FileUtils.readFile(currentDirectory+"/id_file.txt")
 
   case class ArticleMetaData(title: String, url: String, publishedDate: Date, author: String, description: String)
 
