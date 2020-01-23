@@ -1,10 +1,11 @@
 package org.newsroom.utils
 
 import java.io.{BufferedWriter, File, FileWriter}
-import java.text.SimpleDateFormat
-import java.util.Date
 
 import org.newsroom.logger.LogsHelper
+import java.nio.charset.Charset
+import java.nio.charset.CharsetDecoder
+import java.nio.charset.CodingErrorAction
 
 import scala.util.Try
 
@@ -21,7 +22,9 @@ object FileUtils extends LogsHelper {
   def readFile(filename: String): Try[List[String]] = {
     logger.info(s"[RSS] - Reading File ${filename}")
     Try {
-      val bufferedSource = io.Source.fromFile(filename)
+      val decoder = Charset.forName("UTF-8").newDecoder
+      decoder.onMalformedInput(CodingErrorAction.IGNORE)
+      val bufferedSource = io.Source.fromFile(filename)(decoder)
       val lines = (for (line <- bufferedSource.getLines()) yield line).toList
       bufferedSource.close
       lines

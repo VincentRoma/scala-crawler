@@ -2,6 +2,7 @@ package org.newsroom.utils
 
 import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.TimeZone
 
 object DateUtils {
   val DATE_FORMAT = "EEE, MMM dd, yyyy h:mm a"
@@ -11,9 +12,13 @@ object DateUtils {
    * @param d
    * @return
    */
-  def getDateAsString(d: Date): String = {
-    val dateFormat = new SimpleDateFormat(DATE_FORMAT)
-    dateFormat.format(d)
+  def getDateAsString(d: Date, format: Option[String]): String = {
+
+    new SimpleDateFormat(format match {
+      case Some(format) => format
+      case None => DATE_FORMAT
+    })
+      .format(d)
   }
 
   /**
@@ -21,8 +26,10 @@ object DateUtils {
    * @param s
    * @return
    */
-  def convertStringToDate(s: String): Date = {
-    val dateFormat = new SimpleDateFormat(DATE_FORMAT)
-    dateFormat.parse(s)
+  def convertStringToDate(s: String, formatT: Option[String]): Date = {
+    new SimpleDateFormat(formatT match {
+      case Some(value) => value
+      case None => DATE_FORMAT
+    }).parse(s)
   }
 }
