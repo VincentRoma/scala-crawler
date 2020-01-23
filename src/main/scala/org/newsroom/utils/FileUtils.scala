@@ -1,13 +1,14 @@
 package org.newsroom.utils
 
-import java.io.{BufferedWriter, File, FileWriter}
+import java.io.{BufferedWriter, File, FileNotFoundException, FileWriter, Writer}
 
 import org.newsroom.logger.LogsHelper
 import java.nio.charset.Charset
 import java.nio.charset.CharsetDecoder
 import java.nio.charset.CodingErrorAction
 
-import scala.util.Try
+
+import scala.util.{Failure, Success, Try}
 
 /**
  *
@@ -31,18 +32,25 @@ object FileUtils extends LogsHelper {
     }
   }
 
-  /**
-   *
-   * @param filename
-   * @param lines
-   */
-  def writeFile(filename: String, lines: Seq[String]): Unit = {
-    logger.info(s"[RSS] - Update File ${filename}")
-    val file = new File(filename)
-    val bw = new BufferedWriter(new FileWriter(file,true))
-    for (line <- lines) {
-      bw.append(line + System.getProperty("line.separator"))
+
+  def writeFile(bw: BufferedWriter, line: String): Try[Unit] = Try {
+    println("greg c à ",line)
+    println("eee c à ",bw) // Todo wtf
+    bw.append(line + System.getProperty("line.separator"))
+
+    val file = new File("id_file.txt")
+    val bw2 = new BufferedWriter(new FileWriter(file,true))
+    bw2.append(line + System.getProperty("line.separator"))
+    bw2.close()
+
+  }
+
+
+
+  def initBufferWriter(fileName: String) = {
+    Try {
+      val bf  = new BufferedWriter(new FileWriter(new File(fileName), true))
+      bf
     }
-    bw.close()
   }
 }

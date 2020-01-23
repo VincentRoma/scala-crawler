@@ -1,20 +1,37 @@
 package org.newsroom
 
 import java.nio.charset.StandardCharsets
-
 import java.nio.charset.StandardCharsets
 
+import org.newsroom.utils.DateUtils
 import ujson.Value.Value
 import scalaj.http.{Http, HttpConstants, HttpResponse, Token}
 
 import scala.util._
 
 object NewsApiCrawler extends App {
+import HttpParam._
 
+  /*
+  Plan d'action
+
+  J'ai une API qui me donne les derniers articles trendings.
+  Je dois trouver le delay de rafraichissement de l'api.
+  from run -1h.
+  et j'index tout le temps la meme sauce.
+  done.
+
+  J'ai donc besoin d'avoir juste un seul entry point pour le moment => top trendings, country fr + from (now -1h, now)
+  et j'index le résulat.
+
+   */
   getTopTrendingFr
 
+
+
+
   def getTopTrendingFr = {
-    parse(httpCall("https://newsapi.org/v2/top-headlines"))("articles")
+    parse(httpCall("https://newsapi.org/v2/top-headlines", "fr", httpParamTrendingsFr))("articles")
       .arr
       .map(json => {
         Article(
@@ -26,9 +43,81 @@ object NewsApiCrawler extends App {
           publishedAt = parseField(json("publishedAt")),
           content = parseField(json("content"))
         )
-      }).map(value => println(value.source))
+      }).map(value => println(value.url))
   }
 
+  def getAllFr = {
+    parse(httpCall("https://newsapi.org/v2/everything", "fr",httpParamTrendingsFr))("articles")
+      .arr
+      .foreach(json => {
+        //        Article(
+        //          source = parseSource(json("source")),
+        //          title = parseField(json("title")),
+        //          description = parseField(json("description")),
+        //          url = parseField(json("url")),
+        //          urlToImage = parseField(json("urlToImage")),
+        //          publishedAt = parseField(json("publishedAt")),
+        //          content = parseField(json("content"))
+        //        )
+        println(json)
+      })
+  }
+
+
+  def getSourcesFr = {
+    parse(httpCall("https://newsapi.org/v2/sources", "fr",httpParamTrendingsFr))("sources")
+      .arr
+      .foreach(json => {
+        //        Article(
+        //          source = parseSource(json("source")),
+        //          title = parseField(json("title")),
+        //          description = parseField(json("description")),
+        //          url = parseField(json("url")),
+        //          urlToImage = parseField(json("urlToImage")),
+        //          publishedAt = parseField(json("publishedAt")),
+        //          content = parseField(json("content"))
+        //        )
+        println(json)
+      })
+  }
+
+  /*
+  Vosgesmatin.fr
+  Le Monde
+  20minutes.fr
+  Francetvinfo.fr
+  Le Monde
+  Booska-p.com
+  L'equipe
+  Journaldugeek.com
+  Le Monde
+  Purepeople.com
+  20minutes.fr
+  Journaldugeek.com
+  Boursorama.com
+  20minutes.fr
+  Lesnumeriques.com
+  Lefigaro.fr
+  Leparisien.fr
+  Www.lci.fr
+  20minutes.fr
+  Www.geo.fr
+  Bfmtv.com
+  Charentelibre.fr
+  Le Monde
+  Phonandroid.com
+  Francetvinfo.fr
+  Boursorama.com
+  20minutes.fr
+  Le10sport.com
+  Le Monde
+  RT
+  Letribunaldunet.fr
+  20minutes.fr
+  Jeanmarcmorandini.com
+  Lefigaro.fr
+
+   */
 
   /**
    *
@@ -91,14 +180,29 @@ object NewsApiCrawler extends App {
    * @param url
    * @return
    */
-  def httpCall(url: String): String = Http(url)
-    .charset(HttpConstants.utf8)
-    .param("apiKey", "fc97a9aded994810a43cac97199c896c")
-    .param("q", "")
-    .param("pageSize","100")
-    .param("country", "fr")
-    .charset(HttpConstants.utf8)
-    .asString
-    .body
+  def httpCall(url: String, country: String, httpParam: Seq[(String, String)]): String = {
+    val a = Http(url)
+      .charset(HttpConstants.utf8)
+      .param("apiKey", "fc97a9aded994810a43cac97199c896c")
+      .params(httpParam)
+      .charset(HttpConstants.utf8)
+      .asString
+      .body
+
+
+    print(a)
+    a
+
+  }
+
+  object HttpParam {
+    lazy val httpParamTrendingsFr: Seq[(String, String)] = Seq(
+      ("pageSize", "100"),
+      ("language", "fr"),
+      ("page","1"),
+      ("from",DateUtils.getTime(-1)),
+      ("to",DateUtils.getTime(0))
+    )
+  }
 
 }
