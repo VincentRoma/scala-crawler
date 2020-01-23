@@ -41,7 +41,7 @@ object RSSScrapper extends App with LogsHelper {
         logger.info("[RSS] - ES Indexing end")
 
 
-        FileUtils.writeFile("/apps/dev/id_file.txt", metaArticlesSeqFilter.flatten.map(_.url))
+        FileUtils.writeFile("id_file.txt", metaArticlesSeqFilter.flatten.map(_.url))
 
 
         logger.info("[RSS] - RSSScrapper end")
@@ -118,9 +118,9 @@ object RSSScrapper extends App with LogsHelper {
     asScalaBuffer(feed.getEntries)
   }
 
-  lazy val rssUrlsReader = FileUtils.readFile("/apps/dev/list_flux.txt")
+  lazy val rssUrlsReader = FileUtils.readFile("list_flux.txt")
 
-  lazy val filterIdReader = FileUtils.readFile("/apps/dev/id_file.txt")
+  lazy val filterIdReader = FileUtils.readFile("id_file.txt")
 
   case class ArticleMetaData(title: String, url: String, publishedDate: Date, author: String, description: String)
 
