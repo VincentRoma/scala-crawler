@@ -2,7 +2,6 @@ package org.newsroom
 
 import java.nio.charset.StandardCharsets
 import java.nio.charset.StandardCharsets
-
 import org.newsroom.utils.DateUtils
 import ujson.Value.Value
 import scalaj.http.{Http, HttpConstants, HttpResponse, Token}
@@ -10,21 +9,11 @@ import scalaj.http.{Http, HttpConstants, HttpResponse, Token}
 import scala.util._
 
 object NewsApiCrawler extends App {
-import HttpParam._
 
-  /*
-  Plan d'action
 
-  J'ai une API qui me donne les derniers articles trendings.
-  Je dois trouver le delay de rafraichissement de l'api.
-  from run -1h.
-  et j'index tout le temps la meme sauce.
-  done.
+  import HttpParam._
 
-  J'ai donc besoin d'avoir juste un seul entry point pour le moment => top trendings, country fr + from (now -1h, now)
-  et j'index le résulat.
 
-   */
   getTopTrendingFr
 
 
@@ -80,44 +69,6 @@ import HttpParam._
         println(json)
       })
   }
-
-  /*
-  Vosgesmatin.fr
-  Le Monde
-  20minutes.fr
-  Francetvinfo.fr
-  Le Monde
-  Booska-p.com
-  L'equipe
-  Journaldugeek.com
-  Le Monde
-  Purepeople.com
-  20minutes.fr
-  Journaldugeek.com
-  Boursorama.com
-  20minutes.fr
-  Lesnumeriques.com
-  Lefigaro.fr
-  Leparisien.fr
-  Www.lci.fr
-  20minutes.fr
-  Www.geo.fr
-  Bfmtv.com
-  Charentelibre.fr
-  Le Monde
-  Phonandroid.com
-  Francetvinfo.fr
-  Boursorama.com
-  20minutes.fr
-  Le10sport.com
-  Le Monde
-  RT
-  Letribunaldunet.fr
-  20minutes.fr
-  Jeanmarcmorandini.com
-  Lefigaro.fr
-
-   */
 
   /**
    *
@@ -205,4 +156,5 @@ import HttpParam._
     )
   }
 
+  //  override def run(args: List[String]): ZIO[NewsApiCrawler.Environment, Nothing, Int] = ???
 }

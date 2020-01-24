@@ -10,12 +10,15 @@ import com.rometools.rome.feed.synd.{SyndEntry, SyndFeed}
 import com.rometools.rome.io.{SyndFeedInput, XmlReader}
 import org.newsroom.eslastic.ESIndexer._
 import org.newsroom.logger.LogsHelper
-import org.newsroom.utils.{DateUtils}
+import org.newsroom.schema.ArticleMetaData
+import org.newsroom.utils.DateUtils
 import org.newsroom.utils.FileUtils._
-import scala.concurrent.ExecutionContext.Implicits.global
+import zio.ZIO
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.collection.JavaConversions.asScalaBuffer
 import scala.collection.mutable
+import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
 object RSSScrapper extends App with LogsHelper {
@@ -26,17 +29,47 @@ object RSSScrapper extends App with LogsHelper {
    *
    */
 
-  def run: Try[Seq[Try[Try[Seq[Try[Try[Unit]]]]]]] = {
+  def run: Try[Seq[Try[Try[Seq[ZIO[Any, Throwable, Future[Try[Unit]]]]]]]] = {
     for {
       rssUrls <- rssUrlsReader
       filterI <- filterIdReader
-      idWriter <- bufferWriter
+      idWriter <- bufferWriter // Uselees je veux écrire en stream
     } yield {
       scrap(rssUrls, filterI, idWriter)
     }
-
   }
 
+
+  // : Seq[Try[Try[Seq[ZIO[Any, Throwable, Future[Try[Unit]]]]]]]
+  /**
+   *
+   * @param rssList
+   * @return
+   */
+  def scrap(rssList: Seq[String],
+            seqId: Seq[String],
+            initWriter: BufferedWriter): Seq[Try[Try[Seq[ZIO[Any, Throwable, Future[Try[Unit]]]]]]] = {
+    rssList.map(rss => {
+      for {
+        (name, flux) <- parseRssRow(rss)
+      } yield for {
+        data <- initRssSync(flux)
+        articlesFullSeq <- parse(data, name)
+        articlesFilterSeq <- filterByOldId(articlesFullSeq, seqId)
+      } yield for {
+        article <- articlesFilterSeq
+      } yield for {
+        idFuturSeq <- indexArticle(article)
+      } yield for {
+        id <- idFuturSeq
+      } yield for {
+        isSucces <- writeFile(initWriter, id).throwIfFailed
+      } yield {
+        logger.info(s"- [RSS] - Success indexing : $name ")
+        isSucces
+      }
+    })
+  }
 
   /**
    *
@@ -47,44 +80,6 @@ object RSSScrapper extends App with LogsHelper {
     val name = row.split("\";\"")(0)
     val flux = row.split("\";\"")(1)
     (name.substring(1), flux)
-  }
-
-
-  /**
-   *
-   * @param rssList
-   * @return
-   */
-  def scrap(rssList: Seq[String],
-            seqId: Seq[String],
-            initWriter: BufferedWriter): Seq[Try[Try[Seq[Try[Try[Unit]]]]]] = {
-    rssList.map(rss => {
-      val fP = for {
-        (name, flux) <- parseRssRow(rss)
-      } yield for {
-        data <- initRssSync(flux)
-        articlesFullSeq <- parse(data, name)
-        articlesFilterSeq <- filterByOldId(articlesFullSeq, seqId)
-      } yield for {
-        idTrySeq <- index(articlesFilterSeq)
-      } yield for {
-        id <- idTrySeq
-      } yield for {
-        isSucces <- writeFile(initWriter, id).throwIfFailed
-      } yield {
-        logger.info(s"- [RSS] - Success indexing : $name ")
-        isSucces
-      }
-      fP
-    })
-  }
-
-
-  def indexWithEs(s: Seq[ArticleMetaData]): Seq[Try[String]] = {
-    val k = for {
-      idTrySeq <- index(s)
-    } yield idTrySeq
-    k
   }
 
 
@@ -128,7 +123,6 @@ object RSSScrapper extends App with LogsHelper {
     case e: Exception => Failure(new Exception("Need ce zzz de fichier", e))
   }
 
-  case class ArticleMetaData(title: String, url: String, publishedDate: Date, author: String, description: String)
 
   implicit class BlowUpTry[T](current: Try[T]) {
 
@@ -138,4 +132,5 @@ object RSSScrapper extends App with LogsHelper {
     }
 
   }
+
 }
