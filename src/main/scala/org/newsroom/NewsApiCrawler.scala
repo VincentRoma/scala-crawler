@@ -12,19 +12,7 @@ import scala.util._
 object NewsApiCrawler extends App {
 import HttpParam._
 
-  /*
-  Plan d'action
-
-  J'ai une API qui me donne les derniers articles trendings.
-  Je dois trouver le delay de rafraichissement de l'api.
-  from run -1h.
-  et j'index tout le temps la meme sauce.
-  done.
-
-  J'ai donc besoin d'avoir juste un seul entry point pour le moment => top trendings, country fr + from (now -1h, now)
-  et j'index le résulat.
-
-   */
+ 
   getTopTrendingFr
 
 
