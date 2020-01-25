@@ -1,46 +1,36 @@
 package org.newsroom.rss
 
-import java.io
 import java.io.BufferedWriter
 import java.net.URL
-import java.nio.charset.StandardCharsets
-import java.util.Date
 
 import com.rometools.rome.feed.synd.{SyndEntry, SyndFeed}
 import com.rometools.rome.io.{SyndFeedInput, XmlReader}
 import org.newsroom.eslastic.ESIndexer._
 import org.newsroom.logger.LogsHelper
 import org.newsroom.schema.ArticleMetaData
-import org.newsroom.utils.DateUtils
 import org.newsroom.utils.FileUtils._
-import zio.ZIO
+import zio.{ IO, Task, ZIO}
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.collection.JavaConversions.asScalaBuffer
 import scala.collection.mutable
-import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
 object RSSScrapper extends App with LogsHelper {
 
-  run.throwIfFailed
+  run
 
-  /**
-   *
-   */
 
-  def run: Try[Seq[Try[Try[Seq[ZIO[Any, Throwable, Future[Try[Unit]]]]]]]] = {
+  def run: ZIO[Any, Throwable, Seq[Try[ZIO[Any, Throwable, Unit]]]] = {
     for {
       rssUrls <- rssUrlsReader
       filterI <- filterIdReader
-      idWriter <- bufferWriter // Uselees je veux écrire en stream
+      idWriter <- bufferWriter
     } yield {
       scrap(rssUrls, filterI, idWriter)
     }
   }
 
 
-  // : Seq[Try[Try[Seq[ZIO[Any, Throwable, Future[Try[Unit]]]]]]]
   /**
    *
    * @param rssList
@@ -48,7 +38,7 @@ object RSSScrapper extends App with LogsHelper {
    */
   def scrap(rssList: Seq[String],
             seqId: Seq[String],
-            initWriter: BufferedWriter): Seq[Try[Try[Seq[ZIO[Any, Throwable, Future[Try[Unit]]]]]]] = {
+            initWriter: BufferedWriter): Seq[Try[ZIO[Any, Throwable, Unit]]] = {
     rssList.map(rss => {
       for {
         (name, flux) <- parseRssRow(rss)
@@ -56,17 +46,10 @@ object RSSScrapper extends App with LogsHelper {
         data <- initRssSync(flux)
         articlesFullSeq <- parse(data, name)
         articlesFilterSeq <- filterByOldId(articlesFullSeq, seqId)
-      } yield for {
-        article <- articlesFilterSeq
-      } yield for {
-        idFuturSeq <- indexArticle(article)
-      } yield for {
-        id <- idFuturSeq
-      } yield for {
-        isSucces <- writeFile(initWriter, id).throwIfFailed
+        idFuturSeq <- indexArticles(articlesFilterSeq)
+        isSucces <- writeFile(initWriter, idFuturSeq)
       } yield {
-        logger.info(s"- [RSS] - Success indexing : $name ")
-        isSucces
+        logger.info(s"index $isSucces")
       }
     })
   }
@@ -83,7 +66,7 @@ object RSSScrapper extends App with LogsHelper {
   }
 
 
-  def parse(syndEntry: mutable.Buffer[SyndEntry], name: String): Try[mutable.Buffer[ArticleMetaData]] = Try {
+  def parse(syndEntry: mutable.Buffer[SyndEntry], name: String): Task[mutable.Buffer[ArticleMetaData]] = Task {
     syndEntry.map(entry =>
       ArticleMetaData(
         entry.getTitle,
@@ -95,7 +78,12 @@ object RSSScrapper extends App with LogsHelper {
   }
 
 
-  def filterByOldId(articles: Seq[ArticleMetaData], seqId: Seq[String]) = Try {
+  def filterByOldId(articles: Seq[ArticleMetaData], seqId: Seq[String]) = Task {
+    articles.filter(!_.url.contains(seqId))
+  }
+
+  // Task = IO.effect
+  def filterByOldIdIO(articles: Seq[ArticleMetaData], seqId: Seq[String]): Task[Seq[ArticleMetaData]] = IO.effect {
     articles.filter(!_.url.contains(seqId))
   }
 
@@ -105,7 +93,7 @@ object RSSScrapper extends App with LogsHelper {
    * @param url
    * @return
    */
-  def initRssSync(url: String): Try[mutable.Buffer[SyndEntry]] = Try {
+  def initRssSync(url: String): Task[mutable.Buffer[SyndEntry]] = Task {
     logger.info(s"[RSS] - Init RssSync with ${url}")
     val feedUrl = new URL(url)
     val input = new SyndFeedInput
@@ -113,15 +101,11 @@ object RSSScrapper extends App with LogsHelper {
     asScalaBuffer(feed.getEntries)
   }
 
-  lazy val rssUrlsReader: Try[List[String]] = readFile("list_flux.txt")
+  lazy val rssUrlsReader: Task[List[String]] = readFile("list_flux.txt")
 
-  lazy val filterIdReader: Try[List[String]] = readFile("id_file.txt") recoverWith {
-    case e: Exception => Failure(new Exception("Need ce putain de fichier", e))
-  }
+  lazy val filterIdReader: Task[List[String]] = readFile("id_file.txt")
 
-  lazy val bufferWriter: Try[BufferedWriter] = initBufferWriter("id_file.txt") recoverWith {
-    case e: Exception => Failure(new Exception("Need ce zzz de fichier", e))
-  }
+  lazy val bufferWriter: Task[BufferedWriter] = initBufferWriter("id_file.txt")
 
 
   implicit class BlowUpTry[T](current: Try[T]) {

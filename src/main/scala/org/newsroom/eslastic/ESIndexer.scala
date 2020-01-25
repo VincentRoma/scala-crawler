@@ -16,7 +16,7 @@ object ESIndexer extends LogsHelper {
 
 
   /* Run Refacto Nouvelle Index */
-  def indexArticles(articles: Seq[ArticleMetaData]): Seq[Task[Future[ArticleId]]] = {
+  def indexArticles(articles: Seq[ArticleMetaData]): Task[Seq[Task[Future[ArticleId]]]] = Task{
     articles map (article => EsActionImpl.addDocFuture(article))
   }
 

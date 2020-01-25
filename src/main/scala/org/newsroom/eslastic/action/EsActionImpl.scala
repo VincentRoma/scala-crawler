@@ -4,16 +4,11 @@ import org.newsroom.eslastic.{ArticleId, ArticleMetaDataWithId, ESIndexer}
 import org.newsroom.schema.ArticleMetaData
 import org.newsroom.utils.{DateUtils, HashUtils}
 import requests.Response
-import zio.Task
+import zio.{IO, Task, ZIO}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.Try
-
-
-
-//type TaskDB[A] = ZIO[Database, Throwable, A]
-
 
 
 trait EsAction {
@@ -44,6 +39,21 @@ object EsActionImpl extends EsAction {
     }
   }
 
+  /* AddDocTry */
+  def addDocTry2(article: ArticleMetaData): ZIO[Any, Throwable, String] = postDocumentTry2(article.url, "jsonData")
+
+
+  // TRY IMPLEMENT
+  def postDocumentTry2(url: String, data: String): ZIO[Any, Throwable, String] = {
+    for {
+      id <- HashUtils.md5HashTryT(url) // Generate md5Hash
+      e <- postTryT(id, data) // Post to ES
+    } yield {
+      logger.info(s"[RSS] - Success Indexing id $id")
+      id
+    }
+  }
+
   // TRY IMPLEMENT
   def postDocumentTry(url: String, data: String): Try[String] = {
     for {
@@ -57,6 +67,12 @@ object EsActionImpl extends EsAction {
 
   // POST TRY
   def postTry(id: String, data: String) = Try {
+    requests.post(ES_URL + INDEX_NAME + "/_doc/" + id, headers = Map("content-type" -> "application/json"), data = data)
+  }
+
+
+  // POST TRY
+  def postTryT(id: String, data: String) = Task {
     requests.post(ES_URL + INDEX_NAME + "/_doc/" + id, headers = Map("content-type" -> "application/json"), data = data)
   }
 
@@ -102,6 +118,7 @@ object EsActionImpl extends EsAction {
   def postFuture(id: String, data: String): Future[Response] = Future {
     requests.post(ES_URL + INDEX_NAME + "/_doc/" + id, headers = Map("content-type" -> "application/json"), data = data)
   }
+
 
   override def getDocs(): Task[List[ArticleMetaDataWithId]] = Task {
     List(ArticleMetaDataWithId("", "", "", DateUtils.convertStringToDate("1900-01-01", Some("yyyy-mm-dd")), "", ""))
